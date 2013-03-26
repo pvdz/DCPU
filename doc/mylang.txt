@@ -1,0 +1,44 @@
+1 + 1 =>
+set a, 1
+add a, 1
+
+n + x =>
+set a, [n]
+add a, [x]
+
+n - x =>
+set a, [n]
+sub a, [x]
+
+*/%^|&
+
+x + y + z
+set a, x
+add a, [y]
+add a, [z]
+
+x * y % z + a / b - c
+(((x * y) % z) + (a / b)) - c
+set A, [x]
+mul A, [y]
+mod A, [z]
+set B, [a]
+div B, [b]
+add A, B
+sub A, [c]
+
+identifier: 
+	identifierStart
+	identifierStart identifierRest
+identifierStart:
+	alpha
+identifierRest
+	alnum
+	alnum + identifierRest
+operator: 
+	%^&*|/-+
+expression:
+	identifier operator expression
+
+
+

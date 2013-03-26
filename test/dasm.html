@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+  <head></head>
+  <body>
+	<button id="start">start</button><button id="stop">stop</button><button id="next">next</button> <input id="manualin"/><br/>
+  	<div id="out"></div>
+	<div id="result"></div>
+	<div id="debug"></div>
+	<script src="../src/dasm.js"></script>
+    <script src="dasm.js"></script>
+	<script>
+		var again = function(_,asm){
+		  try {
+        asm = asm || next();
+				
+				Dasm.prototype.rex.lastIndex = 0;
+				var match = Dasm.prototype.rex.exec(asm);
+				document.getElementById('debug').innerHTML = match&&(
+					'<table border=1 style="border-collapse:collapse;"=true>'+
+					'<tr><th rowspan=5>labels</th><th rowspan=5>dat</th><th rowspan=5>opcode</th><th colspan=16>A</th><th colspan=16>B</th><th rowspan=5>comment</th></tr>'+
+          '<tr><th rowspan=4></th><th colspan=3>alit</th><th rowspan=4>aname</th><th colspan=11>abox</th><th rowspan=4></th><th colspan=3>blit</th><th rowspan=4>bname</th><th colspan=11>bbox</th></tr>'+
+          '<tr><th rowspan=3></th><th rowspan=3>ahex</th><th rowspan=3>adec</th><th rowspan=3></th><th colspan=5>alhs</th><th colspan=5>arhs</th><th rowspan=3></th><th rowspan=3>bhex</th><th rowspan=3>bdec</th><th rowspan=3></th><th colspan=5>blhs</th><th colspan=5>brhs</th></tr>'+
+					'<tr><th rowspan=2></th><th colspan=3>alhslit</th><th rowspan=2>alhsname</th><th rowspan=2></th><th colspan=3>arhslit</th><th rowspan=2>arhsname</th><th rowspan=2></th><th colspan=3>blhslit</th><th rowspan=2>blhsname</th><th rowspan=2></th><th colspan=3>brhslit</th><th rowspan=2>brhsname</th></tr>'+
+					'<tr><th></th><th>alhshex</th><th>alhsdec</th><th></th><th>arhshex</th><th>arhsdec</th><th></th><th>blhshex</th><th>blhsdec</th><th></th><th>brhshex</th><th>brhsdec</th></tr>'+
+					'<tr><td>'+match.slice(1).join('</td><td>')+'</td></tr>'+
+					'<tr><td>'+match.slice(1).map(function(o,i){ return i+1; }).join('</td><td>')+'</td></tr>'+
+					'</table>'
+				);
+//				console.log("wtf",match, asm)
+				
+		    if (typeof window != 'undefined') document.getElementById('out').innerHTML = 'asm: '+asm;
+//		    console.log(asm);
+		    new Dasm(asm).parse();
+		    if (typeof window != 'undefined') document.getElementById('result').innerHTML = 'ok';
+		  } catch (e) {
+		    if (typeof window != 'undefined') document.getElementById('result').innerHTML = '<span style="color:red;">bad</span>';
+		    throw new Error(e);
+		  }
+		};
+
+	    var t = null;
+		document.getElementById('start').onclick = function(){ if (!t) t = setInterval(again, 10); };
+		document.getElementById('stop').onclick = function(){ t=clearInterval(t); };
+		document.getElementById('next').onclick = again;
+		document.getElementById('manualin').onkeyup = function(){ again(null, document.getElementById('manualin').value); };
+	</script>
+  </body>
+</html>

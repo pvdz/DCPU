@@ -1,0 +1,263 @@
+<!doctype html>
+<html>
+  <head></head>
+  <body>
+  	<style>
+  		.container { position: relative; width: 885px; height: 500px; border: 1px solid black; }
+      .ruler, .cost, .input, .ide, .bytes {
+        position: absolute; 
+        top: 0; 
+        height: 500px; 
+        margin: 0; 
+        padding: 5px; 
+        border: 0; 
+        box-sizing: border-box; 
+        white-space: pre;
+        font-family: monospace;
+        size: 12px;
+			}
+			.ruler {
+				left: 0; 
+        width: 60px; 
+        background-color: #ccc;
+				color: black;
+				overflow: hidden;
+			}
+			.cost {
+				left: 60px;
+				width: 20px;
+				background-color: lightgreen;
+				color: black;
+				overflow: hidden;
+			}
+			.bytes {
+        left: 80px;
+        width: 125px; 
+        background-color: #eee;
+        color: black;
+				overflow: hidden;
+			}
+  		.input, .ide {
+				left: 205px;
+				width: 1000px;
+				background-color: black;
+				color: white;
+  		}
+			.ide {
+				overflow: hidden;
+			}
+			.ruler, .cost, .bytes, .ide { padding-bottom: 50px; }
+  		.input { opacity: 0.5; size: 15px; }
+			.yes { background-color: green; color: white; }
+			.no { background-color: red; color: white; }
+
+      #A, #B, #C, #X, #Y, #Z, #I, #J, #PC, #SP, #O { width: 86px; font-family: monospace; text-align: right; }
+      #A:focus, #B:focus, #C:focus, #X:focus, #Y:focus, #Z:focus, #I:focus, #J:focus, #PC:focus, #SP:focus, #O:focus { background-color: lightgreen; }
+      #xA, #xB, #xC, #xX, #xY, #xZ, #xI, #xJ, #xPC, #xSP, #xO { width: 86px; font-family: monospace; text-align: right; }
+      #xA:focus, #xB:focus, #xC:focus, #xX:focus, #xY:focus, #xZ:focus, #xI:focus, #xJ:focus, #xPC:focus, #xSP:focus, #xO:focus { background-color: lightgreen; }
+			#keyboard_0, #keyboard_1, #keyboard_, #keyboard_2, #keyboard_3, #keyboard_4, #keyboard_5, #keyboard_6, #keyboard_7, #keyboard_8, #keyboard_9, #keyboard_a, #keyboard_b, #keyboard_c, #keyboard_d, #keyboard_e, #keyboard_f { font-family: monospace; width: 20px; }
+  	</style>
+		<div>
+			<button id="reset">Reset</button> <button id="play">Play</button> <button id="pause">Pause</button> <button id="step">Step</button>
+			<span id="hz"></span> <button id="faster">+</button> <button id="slower">-</button>
+			<span id="cycles"></span> <span id="steps"></span>
+		</div>
+		
+		<table>
+			<tr><th></th><th>A</th><th>B</th><th>C</th><th>X</th><th>Y</th><th>Z</th><th>I</th><th>J</th><th>PC</th><th>SP</th><th>EX</th><th>IA</th></tr>
+      <tr><td>dec</td></dec><td><input id="A"/></td><td><input id="B"/></td><td><input id="C"/></td><td><input id="X"/></td><td><input id="Y"/></td><td><input id="Z"/></td><td><input id="I"/></td><td><input id="J"/></td><td><input id="PC"/></td><td><input id="SP"/></td><td><input id="EX"/></td><td><input id="IA"/></td></tr>
+      <tr><td>hex<td><input id="xA"/></td><td><input id="xB"/></td><td><input id="xC"/></td><td><input id="xX"/></td><td><input id="xY"/></td><td><input id="xZ"/></td><td><input id="xI"/></td><td><input id="xJ"/></td><td><input id="xPC"/></td><td><input id="xSP"/></td><td><input id="xEX"/></td><td><input id="xIA"/></td></tr>
+		</table>
+		<table>
+			<tr><td colspan="16">Keyboard input:</td></tr>
+			<tr><td><input id="keyboard_0" disabled/></td><td><input id="keyboard_1" disabled/></td><td><input id="keyboard_2" disabled/></td><td><input id="keyboard_3" disabled/></td><td><input id="keyboard_4" disabled/></td><td><input id="keyboard_5" disabled/></td><td><input id="keyboard_6" disabled/></td><td><input id="keyboard_7" disabled/></td><td><input id="keyboard_8" disabled/></td><td><input id="keyboard_9" disabled/></td><td><input id="keyboard_a" disabled/></td><td><input id="keyboard_b" disabled/></td><td><input id="keyboard_c" disabled/></td><td><input id="keyboard_d" disabled/></td><td><input id="keyboard_e" disabled/></td><td><input id="keyboard_f" disabled/></td></tr>
+		</table>
+		<div class="container">
+			<div class="ruler"></div>
+			<div class="cost"></div>
+			<div class="bytes"></div>
+			<div class="ide"></div>
+			<textarea class="input" wrap="off">
+;start at [0x9010]+1
+;find first non-zero index
+;that's the next keyboard input
+;if not found after 16 tests, fail and repeat
+;else, log, clear and repeat
+
+jsr getc
+brk 0
+
+:memcopy ; I:source, J:target, clobbers: I&J
+  sti [J], [I]
+  sti [J], [I]
+  sti [J], [I]
+  sti [J], [I]
+  sti [J], [I]
+  sti [J], [I]
+  sti [J], [I]
+  sti [J], [I]
+  sti [J], [I]
+  sti [J], [I]
+  sti [J], [I]
+  set pc, pop
+
+
+:getc
+                      ; copy keyboard buffer first
+  set i, 0x9000       ; start of source
+  set j, 0x9011       ; start of target
+  jsr memcopy
+
+  set a, [0x9021]   ; a is adr of last key (loop starts after it)
+  add a, 0x11       ; adjust for cached buffer
+  set i, 0          ; init counter
+  :while
+    add a, 1        ; get next buf pos
+    ifg a, 0x9020   ; if a is beyond buffer
+     set a, 0x9011  ; reset a to start of buffer
+    set b, [a]      ; get key value of current index
+    ifn b, 0        ; if non-zero, we found something
+      set pc, found
+    add i, 1        ; only check 16 inputs
+    ifg i, 0xf      ; after whole buf, fail
+      set pc, getc  ; and repeat
+    set pc, while   ; else, repeat
+
+
+:found
+  log b
+  sub a, 0x11       ; target real buffer
+  set [a], 0        ; "mark" key as read
+  set pc, pop
+</textarea>
+		</div>
+    <script src="../src/dcpu.js"></script>
+    <script src="../src/dasm.js"></script>
+		<script>
+			var inp = document.querySelector('.input');
+			var ruler = document.querySelector('.ruler');
+			var cost = document.querySelector('.cost');
+			var bytes = document.querySelector('.bytes');
+			var ide = document.querySelector('.ide');
+			inp.onscroll = function(){
+				ruler.scrollTop = cost.scrollTop = bytes.scrollTop = ide.scrollTop = inp.scrollTop;
+				bytes.scrollLeft = ide.scrollLeft = inp.scrollLeft;
+			};
+			
+      var inps = ['A','B','C','X','Y','Z','I','J','PC','SP','EX','IA','cycles','steps'].map(function(s){ return document.getElementById(s); });
+      var xinps = ['A','B','C','X','Y','Z','I','J','PC','SP','EX','IA'].map(function(s){ return document.getElementById('x'+s); });
+			var keybs = ['keyboard_0','keyboard_1','keyboard_2','keyboard_3','keyboard_4','keyboard_5','keyboard_6','keyboard_7','keyboard_8','keyboard_9','keyboard_a','keyboard_b','keyboard_c','keyboard_d','keyboard_e','keyboard_f'].map(function(s){ return document.getElementById(s); });
+			
+			var list = ['A','B','C','X','Y','Z','I','J','PC','SP','EX','IA','cycles','steps'];
+			
+      var line = null;
+			var onStep = function(dcpu, lastInBatch){
+
+//				console.log("foo", this.PC)
+        if (lastInBatch) {
+          if (line) line.style.backgroundColor = '';
+          line = document.getElementById('addr_'+dcpu.PC);
+          if (line) line.style.backgroundColor = 'cyan';
+          list.forEach(function(s, i){
+            if (s == 'cycles' || s == 'steps') inps[i].innerHTML = this[s]+' '+s;
+            else {
+              inps[i].value = this[s];
+              xinps[i].value = this[s].toString(16);
+            }
+          },this);
+					
+					var current = dcpu.RAM[0x9010];
+					if (current < 0x9000 || current > 0x900f) current = 0x9000;
+					for (var i=0; i<=0xf; ++i) {
+//						console.log(0x9000+i, current, 0x9000+i == current)
+						keybs[i].value = String.fromCharCode(dcpu.RAM[0x9000+i]);
+						keybs[i].style.backgroundColor = ((0x9000+i) == current ? 'lightgreen':'');
+					}
+        }
+      };
+
+			var updateDcpu = function(dasm){
+				dcpu.updateInput(new Dasm(inp.value).parse().mcode);
+			};
+			
+      var reset = document.getElementById('reset').onclick = function(){
+				if (line) line = line.style.backgroundColor = '';
+        dcpu.reset();
+      };
+			var play = document.getElementById('play').onclick = function(){
+				dcpu.run();
+			};
+			var stop = document.getElementById('pause').onclick = function(){
+				dcpu.stop();
+			};
+      var step = document.getElementById('step').onclick = function(){
+        dcpu.step(true);
+      };
+
+      var updateGui = function(){
+        ide.innerHTML = '';
+        var dasm = new Dasm(inp.value).parse();
+        dasm.costs.length = dasm.bytes.length = dasm.ruler.length = dasm.html.length;
+        ruler.innerHTML = dasm.ruler.join('\n')+'&nbsp;';
+        cost.innerHTML = dasm.costs.join('\n')+'&nbsp;';
+        bytes.innerHTML = dasm.bytes.join('\n')+'&nbsp;';
+        ide.innerHTML = dasm.html.join('');
+        inp.onscroll();
+				return dasm;
+			};
+			
+      inp.onkeyup = function(e){
+				updateGui();
+				
+				updateDcpu();
+      };
+			
+      document.getElementById('faster').onclick = function(){
+        if (dcpu) dcpu.hz = Math.floor(dcpu.hz*1.1);
+      };
+      document.getElementById('slower').onclick = function(){
+        if (dcpu) dcpu.hz = Math.floor(Math.max(10, dcpu.hz*0.9));
+      };
+			
+			document.body.onkeydown = function(e){
+				if (dcpu && e.target != inp) {
+					var next = (dcpu.RAM[0x9010]|0) + 1;
+					if (next < 0x9000 || next > 0x900f) next = 0x9000;
+					if ((dcpu.RAM[next]|0) === 0) {
+						dcpu.RAM[next] = e.keyCode;
+						dcpu.RAM[0x9010] = next;
+					}
+				}
+			};
+
+      var dcpu = new Dcpu(updateGui().mcode, {
+        onStep: onStep,
+        onStop: function(){
+          if (!line) line = document.getElementById('addr_'+dcpu.PC);
+          if (line) line.style.backgroundColor = 'red';
+        },
+        onWrite: {},
+        onRead: {
+					0x9010: function(){
+						var val = dcpu.RAM[0x9010] | 0;
+						if (val < 0x9000 || val >= 0x9010) val = 0x9000;
+						return val;
+					},
+				},
+      }).reset();
+			
+			var last = 0;
+			var lastTime = 0;
+			setTimeout(function again(){
+				if (dcpu) {
+					var now = Date.now();
+					document.getElementById('hz').innerHTML = Math.floor((dcpu.steps - last) / ((now-lastTime)/1000))+' / '+dcpu.hz+' hz';
+				  last = dcpu.steps;
+					lastTime = now;
+				}
+				setTimeout(again, 1000);
+			},1000);
+			
+		</script>
+  </body>
+</html>
